@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
-  
+
   @Autowired
   private ITaskRepository taskRepository;
 
@@ -32,13 +32,14 @@ public class TaskController {
 
     var currentDate = LocalDateTime.now();
     if (currentDate.isAfter(taskModel.getStartAt()) || currentDate.isAfter(taskModel.getEndAt())) {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The start/end date must be after the current date");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("The start/end date must be after the current date");
     }
 
-        if (taskModel.getStartAt().isAfter(taskModel.getEndAt())) {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The start date must be before the end date");
+    if (taskModel.getStartAt().isAfter(taskModel.getEndAt())) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("The start date must be before the end date");
     }
-
 
     var task = this.taskRepository.save(taskModel);
     return ResponseEntity.status(HttpStatus.OK).body(task);
@@ -52,11 +53,26 @@ public class TaskController {
   }
 
   @PutMapping("/{id}")
-  public TaskModel update(@RequestBody TaskModel taskModel, @PathVariable UUID id, HttpServletRequest request) {
+  public ResponseEntity update(@RequestBody TaskModel taskModel, @PathVariable UUID id,
+      HttpServletRequest request) {
     var task = this.taskRepository.findById(id).orElse(null);
+
+    if (task == null) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("Task not found");
+    }
+
+    var idUser = request.getAttribute("idUser");
+
+    if (!task.getIdUser().equals(idUser)) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("User does not have permission to change this task");
+    }
 
     Utils.copyNonNullProperties(taskModel, task);
 
-    return this.taskRepository.save(task);
+    var updatedTask = this.taskRepository.save(task);
+
+    return ResponseEntity.status(HttpStatus.OK).body(updatedTask);
   }
 }

@@ -25,7 +25,8 @@ public class UserController {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User already exists");
     }
 
-    var passwordHash = BCrypt.withDefaults().hashToString(12, userModel.getPassword().toCharArray());
+    var passwordHash =
+        BCrypt.withDefaults().hashToString(12, userModel.getPassword().toCharArray());
 
     userModel.setPassword(passwordHash);
 
